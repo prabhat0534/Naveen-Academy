@@ -17,7 +17,7 @@ export default function App() {
     if (token && user) {
       try {
         setCurrentUser(JSON.parse(user));
-      } catch {
+      } catch (err) {
         localStorage.removeItem("director_token");
         localStorage.removeItem("director_user");
       }
@@ -29,19 +29,37 @@ export default function App() {
     localStorage.removeItem("director_token");
     localStorage.removeItem("director_user");
     setCurrentUser(null);
+    window.location.pathname = "/";
   };
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#0f172a", color: "#94a3b8" }}>
-        Loading Naveen Academy...
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#0f172a",
+          color: "#94a3b8",
+          fontSize: "16px",
+          fontFamily: "'Inter', system-ui, sans-serif",
+        }}
+      >
+        Initializing Naveen Academy Portal...
       </div>
     );
   }
 
-  // Agar user logged in nahi hai, to direct Login screen dikhao
+  // Agar user logged in nahi hai toh seedha Login Page load hoga
   if (!currentUser) {
-    return <Login onLoginSuccess={(user) => setCurrentUser(user)} />;
+    return (
+      <Login
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+        }}
+      />
+    );
   }
 
   const navItems = [
@@ -53,8 +71,14 @@ export default function App() {
   ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8fafc", fontFamily: "'Inter', system-ui, sans-serif" }}>
-      
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        backgroundColor: "#f8fafc",
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}
+    >
       {/* Sidebar */}
       <aside
         style={{
@@ -69,8 +93,16 @@ export default function App() {
         }}
       >
         <div>
-          {/* Logo / Header */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "32px", padding: "0 8px" }}>
+          {/* Brand Header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "32px",
+              padding: "0 8px",
+            }}
+          >
             <div
               style={{
                 width: "40px",
@@ -86,16 +118,33 @@ export default function App() {
               🎓
             </div>
             <div>
-              <h1 style={{ fontSize: "16px", fontWeight: "800", margin: 0, color: "#f8fafc" }}>
+              <h1
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "800",
+                  margin: 0,
+                  color: "#f8fafc",
+                }}
+              >
                 Naveen Academy
               </h1>
-              <span style={{ fontSize: "11px", color: "#94a3b8" }}>Admin Portal</span>
+              <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+                Admin Portal
+              </span>
             </div>
           </div>
 
           {/* Navigation Links */}
           <nav style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", padding: "0 10px 4px", textTransform: "uppercase" }}>
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: "700",
+                color: "#64748b",
+                padding: "0 10px 4px",
+                textTransform: "uppercase",
+              }}
+            >
               Main Menu
             </span>
             {navItems.map((item) => {
@@ -128,17 +177,56 @@ export default function App() {
           </nav>
         </div>
 
-        {/* User Card & Logout */}
-        <div style={{ borderTop: "1px solid #1e293b", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 8px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700", color: "#cbd5e1" }}>
+        {/* User Status & Logout */}
+        <div
+          style={{
+            borderTop: "1px solid #1e293b",
+            paddingTop: "16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "0 8px",
+            }}
+          >
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                backgroundColor: "#334155",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "12px",
+                fontWeight: "700",
+                color: "#cbd5e1",
+              }}
+            >
               NA
             </div>
             <div style={{ overflow: "hidden" }}>
-              <div style={{ fontSize: "12px", fontWeight: "700", color: "#f1f5f9", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  color: "#f1f5f9",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                  overflow: "hidden",
+                }}
+              >
                 Director
               </div>
-              <div style={{ fontSize: "10px", color: "#64748b" }}>admin@naveenacademy.com</div>
+              <div style={{ fontSize: "10px", color: "#64748b" }}>
+                admin@naveenacademy.com
+              </div>
             </div>
           </div>
 
@@ -146,23 +234,31 @@ export default function App() {
             onClick={handleLogout}
             style={{
               width: "100%",
-              padding: "8px 12px",
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              padding: "9px 12px",
+              backgroundColor: "rgba(239, 68, 68, 0.12)",
               color: "#ef4444",
-              border: "1px solid rgba(239, 68, 68, 0.2)",
+              border: "1px solid rgba(239, 68, 68, 0.25)",
               borderRadius: "8px",
               fontSize: "12px",
               fontWeight: "700",
               cursor: "pointer",
+              transition: "background 0.2s ease",
             }}
           >
-            🚪 Logout
+            🚪 Logout Portal
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main style={{ flex: 1, padding: "28px 36px", overflowY: "auto", boxSizing: "border-box" }}>
+      {/* Main Container */}
+      <main
+        style={{
+          flex: 1,
+          padding: "28px 36px",
+          overflowY: "auto",
+          boxSizing: "border-box",
+        }}
+      >
         {activeTab === "Dashboard" && <Dashboard />}
         {activeTab === "Students" && <Students />}
         {activeTab === "Fees Management" && <Fees />}

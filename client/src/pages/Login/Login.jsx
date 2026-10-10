@@ -13,7 +13,7 @@ export default function Login({ onLoginSuccess }) {
 
     try {
       const BASE_URL = import.meta.env.VITE_BACKEND_URL
-        ? `${import.meta.env.VITE_BACKEND_URL}/api`
+        ? `${import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, "")}/api`
         : "https://naveen-academy-0c7k.onrender.com/api";
 
       const res = await fetch(`${BASE_URL}/auth/login`, {
@@ -27,17 +27,13 @@ export default function Login({ onLoginSuccess }) {
       if (data.success && data.token) {
         localStorage.setItem("director_token", data.token);
         localStorage.setItem("director_user", JSON.stringify(data.user));
-        if (onLoginSuccess) {
-          onLoginSuccess(data.user);
-        } else {
-          window.location.href = "/admin/dashboard";
-        }
+        onLoginSuccess(data.user);
       } else {
-        setError(data.message || "Invalid credentials");
+        setError(data.message || "Invalid credentials. Access Denied.");
       }
     } catch (err) {
       console.error(err);
-      setError("Cannot connect to server. Please try again.");
+      setError("Cannot reach backend server. Check cloud deployment.");
     } finally {
       setLoading(false);
     }
@@ -82,7 +78,14 @@ export default function Login({ onLoginSuccess }) {
           >
             🎓
           </div>
-          <h2 style={{ color: "#f8fafc", margin: "0 0 6px 0", fontSize: "22px", fontWeight: "800" }}>
+          <h2
+            style={{
+              color: "#f8fafc",
+              margin: "0 0 6px 0",
+              fontSize: "22px",
+              fontWeight: "800",
+            }}
+          >
             Naveen Academy
           </h2>
           <p style={{ color: "#94a3b8", margin: 0, fontSize: "13px" }}>
@@ -107,9 +110,20 @@ export default function Login({ onLoginSuccess }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+        >
           <div>
-            <label style={{ display: "block", color: "#cbd5e1", fontSize: "12px", fontWeight: "600", marginBottom: "6px" }}>
+            <label
+              style={{
+                display: "block",
+                color: "#cbd5e1",
+                fontSize: "12px",
+                fontWeight: "600",
+                marginBottom: "6px",
+              }}
+            >
               Email Address
             </label>
             <input
@@ -133,7 +147,15 @@ export default function Login({ onLoginSuccess }) {
           </div>
 
           <div>
-            <label style={{ display: "block", color: "#cbd5e1", fontSize: "12px", fontWeight: "600", marginBottom: "6px" }}>
+            <label
+              style={{
+                display: "block",
+                color: "#cbd5e1",
+                fontSize: "12px",
+                fontWeight: "600",
+                marginBottom: "6px",
+              }}
+            >
               Password
             </label>
             <input
@@ -172,14 +194,23 @@ export default function Login({ onLoginSuccess }) {
               boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.3)",
             }}
           >
-            {loading ? "Authenticating..." : "Sign In to Dashboard →"}
+            {loading ? "Verifying..." : "Sign In to Dashboard →"}
           </button>
         </form>
 
-        <div style={{ marginTop: "24px", paddingTop: "18px", borderTop: "1px solid #334155", textAlign: "center" }}>
+        <div
+          style={{
+            marginTop: "24px",
+            paddingTop: "18px",
+            borderTop: "1px solid #334155",
+            textAlign: "center",
+          }}
+        >
           <p style={{ color: "#64748b", fontSize: "12px", margin: 0 }}>
-            Director Credentials:<br />
-            <strong style={{ color: "#94a3b8" }}>admin@naveenacademy.com</strong> | <strong style={{ color: "#94a3b8" }}>admin@naveen123</strong>
+            Director Credentials:
+            <br />
+            <strong style={{ color: "#94a3b8" }}>admin@naveenacademy.com</strong> |{" "}
+            <strong style={{ color: "#94a3b8" }}>admin@naveen123</strong>
           </p>
         </div>
       </div>

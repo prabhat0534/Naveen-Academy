@@ -1,6 +1,5 @@
-const BASE_URL = import.meta.env.VITE_BACKEND_URL 
-  ? `${import.meta.env.VITE_BACKEND_URL}/api` 
-  : "http://localhost:5000/api";
+const RAW_URL = import.meta.env.VITE_BACKEND_URL || "https://naveen-academy-0c7k.onrender.com";
+const BASE_URL = `${RAW_URL.replace(/\/+$/, "")}/api`;
 
 // 0. Director Login
 export const loginAPI = async (credentials) => {
@@ -70,7 +69,9 @@ export const fetchDashboardStatsAPI = async () => {
 
       const paidStudents = all.filter((s) => {
         const hasHistoryPaid = s.feeHistory?.some(
-          (f) => (f.month?.toLowerCase().includes("oct") || f.status === "Paid") && f.status === "Paid"
+          (f) =>
+            (f.month?.toLowerCase().includes("oct") || f.status === "Paid") &&
+            f.status === "Paid"
         );
         return s.feeStatus === "Paid" || hasHistoryPaid;
       });
@@ -97,9 +98,15 @@ export const fetchDashboardStatsAPI = async () => {
         },
       };
     }
-    return { success: false, stats: { totalStudents: 0, monthlyRevenue: 0, pendingDues: 0, pendingCount: 0 } };
+    return {
+      success: false,
+      stats: { totalStudents: 0, monthlyRevenue: 0, pendingDues: 0, pendingCount: 0 },
+    };
   } catch (error) {
-    return { success: false, stats: { totalStudents: 0, monthlyRevenue: 0, pendingDues: 0, pendingCount: 0 } };
+    return {
+      success: false,
+      stats: { totalStudents: 0, monthlyRevenue: 0, pendingDues: 0, pendingCount: 0 },
+    };
   }
 };
 
