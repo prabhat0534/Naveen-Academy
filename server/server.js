@@ -5,7 +5,6 @@ require("dotenv").config();
 
 const app = express();
 
-// Cloud & Local cross-origin access allowed
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -14,7 +13,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// MongoDB Atlas Connection (from .env)
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 if (!MONGO_URI) {
@@ -26,15 +24,15 @@ if (!MONGO_URI) {
     .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 }
 
-// Student Routes Register
+// Routes Register
+const authRoutes = require("./routes/authRoutes");
 const studentRoutes = require("./routes/studentRoutes");
-app.use("/api/students", studentRoutes);
-
-// Notices Routes Register
 const noticeRoutes = require("./routes/noticeRoutes");
+
+app.use("/api/auth", authRoutes);
+app.use("/api/students", studentRoutes);
 app.use("/api/notices", noticeRoutes);
 
-// Health Check Route
 app.get("/", (req, res) => {
   res.send("Naveen Academy API is Live on Cloud!");
 });

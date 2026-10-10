@@ -2,6 +2,21 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL
   ? `${import.meta.env.VITE_BACKEND_URL}/api` 
   : "http://localhost:5000/api";
 
+// 0. Director Login
+export const loginAPI = async (credentials) => {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Login API error:", error);
+    return { success: false, message: "Cannot connect to server." };
+  }
+};
+
 // 1. Fetch Students
 export const fetchStudentsAPI = async () => {
   try {
@@ -101,7 +116,7 @@ export const fetchNoticesAPI = async () => {
 
 export const createNoticeAPI = async (noticeData) => {
   try {
-    const res = await createNoticeAPI(`${BASE_URL}/notices/create`, {
+    const res = await fetch(`${BASE_URL}/notices/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(noticeData),
