@@ -1,0 +1,60 @@
+.classes-page {
+    padding: 30px;
+    background: #f4f7fc;
+    min-height: 100vh;
+}
+
+.classes-page h1 {
+    font-size: 32px;
+    color: #14213d;
+    margin-bottom: 30px;
+}
+
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 25px;
+}
+
+.class-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border-left: 6px solid #2563eb;
+}
+
+.class-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+.class-card h2 {
+    color: #14213d;
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+.class-card p {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.class-card button {
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.class-card button:hover {
+    background: #1d4ed8;
+}
