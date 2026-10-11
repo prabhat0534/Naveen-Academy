@@ -4,7 +4,7 @@ import Students from "./pages/Students/Students";
 import Fees from "./pages/Fees/Fees";
 import Notes from "./pages/Notes/Notes";
 import Notices from "./pages/Notices/Notices";
-import Login from "./pages/Login";
+import Login from "./pages/login";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
