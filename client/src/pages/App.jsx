@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import Dashboard from "./pages/Dashboard/Dashboard";
-import Students from "./pages/Students/Students";
-import Fees from "./pages/Fees/Fees";
-import Notes from "./pages/Notes/Notes";
-import Notices from "./pages/Notices/Notices";
+import Dashboard from "./Dashboard/Dashboard";
+import Students from "./Students/Students";
+import Fees from "./Fees/Fees";
+import Notes from "./Notes/Notes";
+import Notices from "./Notices/Notices";
 import Login from "./pages/login";
 
 export default function App() {
