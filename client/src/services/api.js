@@ -1,6 +1,4 @@
-const RAW_URL = import.meta.env.VITE_BACKEND_URL || "https://naveen-academy-0c7k.onrender.com";
-const BASE_URL = `${RAW_URL.replace(/\/+$/, "")}/api`;
-
+const BASE_URL = "https://naveen-academy-0c7k.onrender.com/api";
 // 0. Director Login
 export const loginAPI = async (credentials) => {
   try {
