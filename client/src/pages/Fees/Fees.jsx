@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { fetchStudentsAPI, payFeeAPI } from "../../services/api";
 import { getFeeReminderMessage, generateWhatsAppLink } from "../../utils/whatsappTemplates";
 
-export default function Fees() {
+export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -21,10 +21,11 @@ export default function Fees() {
   // Receipt Modal State
   const [receiptData, setReceiptData] = useState(null);
 
-  const monthsList = [
-    "January 2026",
-    "February 2026",
-    "March 2026",
+  // Student Month-wise Ledger Modal State
+  const [selectedLedgerStudent, setSelectedLedgerStudent] = useState(null);
+
+  // Standard Academic Session Months (April to March)
+  const sessionMonths = [
     "April 2026",
     "May 2026",
     "June 2026",
@@ -34,6 +35,9 @@ export default function Fees() {
     "October 2026",
     "November 2026",
     "December 2026",
+    "January 2027",
+    "February 2027",
+    "March 2027",
   ];
 
   const loadData = async () => {
@@ -65,6 +69,14 @@ export default function Fees() {
           };
         });
         setStudents(mapped);
+
+        // Keep active ledger student in sync if modal is open
+        if (selectedLedgerStudent) {
+          const refreshed = mapped.find(
+            (s) => s.id === selectedLedgerStudent.id || s.mongoId === selectedLedgerStudent.mongoId
+          );
+          if (refreshed) setSelectedLedgerStudent(refreshed);
+        }
       }
     } catch (err) {
       console.error("Failed to load fees data:", err);
@@ -77,10 +89,21 @@ export default function Fees() {
     loadData();
   }, []);
 
-  const openCollectModal = (student) => {
+  // Handle auto open from dashboard
+  useEffect(() => {
+    if (autoOpenFeeModal && students.length > 0) {
+      const firstPending = students.find((s) => s.feeStatus !== "Paid") || students[0];
+      if (firstPending) {
+        openCollectModal(firstPending);
+      }
+      if (clearAutoOpen) clearAutoOpen();
+    }
+  }, [autoOpenFeeModal, students]);
+
+  const openCollectModal = (student, defaultMonth = "October 2026") => {
     setActiveStudent(student);
     setFeeForm({
-      month: "October 2026",
+      month: defaultMonth,
       amount: student.monthlyFee || 1500,
       mode: "UPI (Google Pay)",
       date: new Date().toISOString().split("T")[0],
@@ -128,11 +151,21 @@ export default function Fees() {
     }
   };
 
+  // Helper: check month record from student's feeHistory
+  const getMonthRecord = (student, monthName) => {
+    if (!student || !student.feeHistory) return null;
+    return student.feeHistory.find((f) => {
+      const recorded = f.month ? f.month.toLowerCase().trim() : "";
+      const target = monthName.toLowerCase().trim();
+      return (recorded.includes(target) || target.includes(recorded)) && f.status === "Paid";
+    });
+  };
+
   const filteredStudents = students.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.id.toLowerCase().includes(search.toLowerCase()) ||
-      s.mobile.includes(search);
+      s.mobile?.includes(search);
     const matchesStatus =
       statusFilter === "All" || s.feeStatus === statusFilter;
     return matchesSearch && matchesStatus;
@@ -153,7 +186,9 @@ export default function Fees() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <h2 style={{ fontSize: "22px", fontWeight: "700", color: "#0f172a", margin: 0 }}>Fees Management</h2>
-          <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0 0 0" }}>Track monthly collections, record fee receipts & send parent WhatsApp reminders</p>
+          <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0 0 0" }}>
+            Track monthly collections, view 12-month student fee ledgers & record receipts
+          </p>
         </div>
       </div>
 
@@ -191,7 +226,7 @@ export default function Fees() {
         <div style={{ flex: 1, minWidth: "240px" }}>
           <input
             type="text"
-            placeholder="Search by student name, roll number, or mobile..."
+            placeholder="Search student name, roll number, or phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
@@ -221,10 +256,10 @@ export default function Fees() {
                 <th style={{ padding: "12px 18px" }}>Student</th>
                 <th style={{ padding: "12px 16px" }}>Class</th>
                 <th style={{ padding: "12px 16px" }}>Father's Name</th>
-                <th style={{ padding: "12px 16px" }}>Phone</th>
                 <th style={{ padding: "12px 16px" }}>Monthly Fee</th>
-                <th style={{ padding: "12px 16px" }}>Status</th>
-                <th style={{ padding: "12px 18px", textAlign: "right" }}>Action</th>
+                <th style={{ padding: "12px 16px" }}>Current Status</th>
+                <th style={{ padding: "12px 16px" }}>12-Month Ledger</th>
+                <th style={{ padding: "12px 18px", textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -235,108 +270,133 @@ export default function Fees() {
                   </td>
                 </tr>
               ) : filteredStudents.length > 0 ? (
-                filteredStudents.map((st) => (
-                  <tr key={st.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{ padding: "12px 18px" }}>
-                      <div style={{ fontWeight: "600", color: "#0f172a" }}>{st.name}</div>
-                      <div style={{ fontSize: "11px", color: "#94a3b8" }}>{st.id} • Roll: {st.rollNo}</div>
-                    </td>
-                    <td style={{ padding: "12px 16px", color: "#0f172a", fontWeight: "600" }}>{st.class}</td>
-                    <td style={{ padding: "12px 16px", color: "#475569" }}>{st.fatherName}</td>
-                    <td style={{ padding: "12px 16px", color: "#64748b" }}>{st.mobile}</td>
-                    <td style={{ padding: "12px 16px", fontWeight: "700", color: "#0f172a" }}>₹{st.monthlyFee}</td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "3px 10px",
-                          borderRadius: "9999px",
-                          fontSize: "11px",
-                          fontWeight: "700",
-                          backgroundColor: st.feeStatus === "Paid" ? "#ecfdf5" : "#fef3c7",
-                          color: st.feeStatus === "Paid" ? "#047857" : "#b45309",
-                        }}
-                      >
-                        {st.feeStatus}
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px 18px", textAlign: "right" }}>
-                      {st.feeStatus !== "Paid" ? (
-                        <div style={{ display: "inline-flex", gap: "6px" }}>
-                          <button
-                            onClick={() => openCollectModal(st)}
-                            style={{
-                              backgroundColor: "#2563eb",
-                              color: "#ffffff",
-                              border: "none",
-                              padding: "7px 12px",
-                              borderRadius: "8px",
-                              fontSize: "12px",
-                              fontWeight: "700",
-                              cursor: "pointer",
-                            }}
-                          >
-                            💳 Collect Fee
-                          </button>
-                          <a
-                            href={generateWhatsAppLink(st.mobile, getFeeReminderMessage(st))}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              textDecoration: "none",
-                              backgroundColor: "#22c55e",
-                              color: "#ffffff",
-                              padding: "7px 10px",
-                              borderRadius: "8px",
-                              fontSize: "12px",
-                              fontWeight: "700",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                            }}
-                            title="Send WhatsApp Fee Reminder"
-                          >
-                            💬 Remind
-                          </a>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            const lastFee = st.feeHistory?.[0] || {
-                              month: "October 2026",
-                              amount: st.monthlyFee,
-                              mode: "Cash / UPI",
-                              date: new Date().toISOString().split("T")[0],
-                            };
-                            setReceiptData({
-                              receiptNo: `REC-${Math.floor(100000 + Math.random() * 900000)}`,
-                              studentName: st.name,
-                              studentClass: st.class,
-                              studentId: st.id,
-                              amount: lastFee.amount,
-                              month: lastFee.month,
-                              mode: lastFee.mode,
-                              date: lastFee.date,
-                              fatherName: st.fatherName,
-                            });
-                          }}
+                filteredStudents.map((st) => {
+                  const paidCount = sessionMonths.filter((m) => !!getMonthRecord(st, m)).length;
+
+                  return (
+                    <tr key={st.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "12px 18px" }}>
+                        <div style={{ fontWeight: "700", color: "#0f172a" }}>{st.name}</div>
+                        <div style={{ fontSize: "11px", color: "#94a3b8" }}>{st.id} • Roll: {st.rollNo}</div>
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "#0f172a", fontWeight: "600" }}>{st.class}</td>
+                      <td style={{ padding: "12px 16px", color: "#475569" }}>{st.fatherName}</td>
+                      <td style={{ padding: "12px 16px", fontWeight: "700", color: "#0f172a" }}>₹{st.monthlyFee}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span
                           style={{
-                            backgroundColor: "#f8fafc",
-                            color: "#0f172a",
-                            border: "1px solid #cbd5e1",
-                            padding: "7px 14px",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            cursor: "pointer",
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: "9999px",
+                            fontSize: "11px",
+                            fontWeight: "700",
+                            backgroundColor: st.feeStatus === "Paid" ? "#ecfdf5" : "#fef3c7",
+                            color: st.feeStatus === "Paid" ? "#047857" : "#b45309",
                           }}
                         >
-                          📄 View Receipt
+                          {st.feeStatus}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <button
+                          onClick={() => setSelectedLedgerStudent(st)}
+                          style={{
+                            backgroundColor: "#eff6ff",
+                            color: "#1d4ed8",
+                            border: "1px solid #bfdbfe",
+                            padding: "6px 12px",
+                            borderRadius: "8px",
+                            fontSize: "12px",
+                            fontWeight: "700",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          📅 View Ledger ({paidCount}/12 Paid)
                         </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td style={{ padding: "12px 18px", textAlign: "right" }}>
+                        <div style={{ display: "inline-flex", gap: "6px" }}>
+                          {st.feeStatus !== "Paid" ? (
+                            <>
+                              <button
+                                onClick={() => openCollectModal(st)}
+                                style={{
+                                  backgroundColor: "#2563eb",
+                                  color: "#ffffff",
+                                  border: "none",
+                                  padding: "7px 12px",
+                                  borderRadius: "8px",
+                                  fontSize: "12px",
+                                  fontWeight: "700",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                💳 Collect Fee
+                              </button>
+                              <a
+                                href={generateWhatsAppLink(st.mobile, getFeeReminderMessage(st))}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  textDecoration: "none",
+                                  backgroundColor: "#22c55e",
+                                  color: "#ffffff",
+                                  padding: "7px 10px",
+                                  borderRadius: "8px",
+                                  fontSize: "12px",
+                                  fontWeight: "700",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                }}
+                                title="Send WhatsApp Fee Reminder"
+                              >
+                                💬 Remind
+                              </a>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                const lastFee = st.feeHistory?.[0] || {
+                                  month: "October 2026",
+                                  amount: st.monthlyFee,
+                                  mode: "Cash / UPI",
+                                  date: new Date().toISOString().split("T")[0],
+                                };
+                                setReceiptData({
+                                  receiptNo: `REC-${Math.floor(100000 + Math.random() * 900000)}`,
+                                  studentName: st.name,
+                                  studentClass: st.class,
+                                  studentId: st.id,
+                                  amount: lastFee.amount,
+                                  month: lastFee.month,
+                                  mode: lastFee.mode,
+                                  date: lastFee.date,
+                                  fatherName: st.fatherName,
+                                });
+                              }}
+                              style={{
+                                backgroundColor: "#f8fafc",
+                                color: "#0f172a",
+                                border: "1px solid #cbd5e1",
+                                padding: "7px 14px",
+                                borderRadius: "8px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                              }}
+                            >
+                              📄 Receipt
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan="7" style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
@@ -349,9 +409,167 @@ export default function Fees() {
         </div>
       </div>
 
+      {/* MONTH-WISE DETAILED FEE LEDGER MODAL */}
+      {selectedLedgerStudent && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 120, padding: "16px" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "18px", width: "100%", maxWidth: "680px", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", padding: "24px", boxSizing: "border-box" }}>
+            
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid #e2e8f0", paddingBottom: "14px", marginBottom: "16px" }}>
+              <div>
+                <h3 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+                  {selectedLedgerStudent.name} — Monthly Fee Ledger
+                </h3>
+                <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#64748b" }}>
+                  Class: <strong>{selectedLedgerStudent.class}</strong> | Monthly Fee: <strong>₹{selectedLedgerStudent.monthlyFee}</strong> | Mobile: <strong>{selectedLedgerStudent.mobile}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedLedgerStudent(null)}
+                style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontWeight: "700", color: "#64748b" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Metrics */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+              <div style={{ backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0", padding: "12px 16px", borderRadius: "10px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "#047857", textTransform: "uppercase" }}>Paid Months</span>
+                <div style={{ fontSize: "20px", fontWeight: "800", color: "#065f46", marginTop: "2px" }}>
+                  {sessionMonths.filter((m) => !!getMonthRecord(selectedLedgerStudent, m)).length} / 12 Months
+                </div>
+              </div>
+              <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", padding: "12px 16px", borderRadius: "10px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "#b91c1c", textTransform: "uppercase" }}>Pending Months</span>
+                <div style={{ fontSize: "20px", fontWeight: "800", color: "#991b1b", marginTop: "2px" }}>
+                  {sessionMonths.filter((m) => !getMonthRecord(selectedLedgerStudent, m)).length} Months
+                </div>
+              </div>
+            </div>
+
+            {/* Months Status Breakdown Table */}
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#64748b", textTransform: "uppercase", fontSize: "11px" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Academic Month</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Status</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Payment Details</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right" }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessionMonths.map((m) => {
+                    const record = getMonthRecord(selectedLedgerStudent, m);
+                    const isPaid = !!record;
+
+                    return (
+                      <tr key={m} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "10px 14px", fontWeight: "700", color: "#0f172a" }}>
+                          {m}
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "2px 8px",
+                              borderRadius: "9999px",
+                              fontSize: "11px",
+                              fontWeight: "700",
+                              backgroundColor: isPaid ? "#dcfce7" : "#fee2e2",
+                              color: isPaid ? "#15803d" : "#b91c1c",
+                            }}
+                          >
+                            {isPaid ? "✓ Paid" : "✕ Pending"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 14px", color: "#64748b" }}>
+                          {isPaid ? (
+                            <span>₹{record.amount || selectedLedgerStudent.monthlyFee} • {record.mode || "Paid"} ({record.date || "-"})</span>
+                          ) : (
+                            <span style={{ color: "#94a3b8" }}>Due ₹{selectedLedgerStudent.monthlyFee}</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "right" }}>
+                          {!isPaid ? (
+                            <button
+                              onClick={() => openCollectModal(selectedLedgerStudent, m)}
+                              style={{
+                                backgroundColor: "#2563eb",
+                                color: "#ffffff",
+                                border: "none",
+                                padding: "5px 10px",
+                                borderRadius: "6px",
+                                fontSize: "11px",
+                                fontWeight: "700",
+                                cursor: "pointer",
+                              }}
+                            >
+                              + Pay This Month
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setReceiptData({
+                                  receiptNo: `REC-${Math.floor(100000 + Math.random() * 900000)}`,
+                                  studentName: selectedLedgerStudent.name,
+                                  studentClass: selectedLedgerStudent.class,
+                                  studentId: selectedLedgerStudent.id,
+                                  amount: record.amount || selectedLedgerStudent.monthlyFee,
+                                  month: m,
+                                  mode: record.mode || "Online",
+                                  date: record.date || new Date().toISOString().split("T")[0],
+                                  fatherName: selectedLedgerStudent.fatherName,
+                                });
+                              }}
+                              style={{
+                                background: "none",
+                                border: "1px solid #cbd5e1",
+                                padding: "4px 8px",
+                                borderRadius: "6px",
+                                fontSize: "11px",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                                color: "#475569",
+                              }}
+                            >
+                              Receipt
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+              <button
+                onClick={() => setSelectedLedgerStudent(null)}
+                style={{
+                  backgroundColor: "#0f172a",
+                  color: "#ffffff",
+                  border: "none",
+                  padding: "8px 18px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                Close Ledger
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* COLLECT FEE MODAL */}
       {collectModalOpen && activeStudent && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "16px" }}>
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 130, padding: "16px" }}>
           <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "24px", maxWidth: "460px", width: "100%", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
               <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#0f172a", margin: 0 }}>
@@ -365,7 +583,7 @@ export default function Fees() {
             <div style={{ backgroundColor: "#f8fafc", padding: "12px 14px", borderRadius: "10px", marginBottom: "16px", border: "1px solid #e2e8f0" }}>
               <div style={{ fontWeight: "700", color: "#0f172a" }}>{activeStudent.name}</div>
               <div style={{ fontSize: "12px", color: "#64748b" }}>
-                {activeStudent.class} • ID: {activeStudent.id} • Mobile: {activeStudent.mobile}
+                Class: {activeStudent.class} • ID: {activeStudent.id} • Mobile: {activeStudent.mobile}
               </div>
             </div>
 
@@ -377,7 +595,7 @@ export default function Fees() {
                   onChange={(e) => setFeeForm({ ...feeForm, month: e.target.value })}
                   style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", backgroundColor: "#fff" }}
                 >
-                  {monthsList.map((m) => (
+                  {sessionMonths.map((m) => (
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
