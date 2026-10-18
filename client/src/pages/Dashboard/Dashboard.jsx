@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchStudentsAPI } from "../services/api";
+import { fetchStudentsAPI } from "../../services/api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
