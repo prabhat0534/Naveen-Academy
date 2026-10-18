@@ -67,6 +67,18 @@ export default function Dashboard() {
     }
   });
 
+  // Action handlers
+  const handleOpenEnrollStudent = () => {
+    navigate("/admin/students", { state: { openEnrollModal: true } });
+    // Also dispatch custom event if App uses tab switching without unmounting
+    window.dispatchEvent(new CustomEvent("open-enroll-modal"));
+  };
+
+  const handleOpenFeeCollect = () => {
+    navigate("/admin/fees", { state: { openFeeModal: true } });
+    window.dispatchEvent(new CustomEvent("open-fee-modal"));
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px", fontFamily: "'Inter', system-ui, sans-serif" }}>
       
@@ -127,7 +139,8 @@ export default function Dashboard() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "160px" }}>
           <button
-            onClick={() => navigate("/admin/students")}
+            type="button"
+            onClick={handleOpenEnrollStudent}
             style={{
               backgroundColor: "#ffffff",
               color: "#2563eb",
@@ -142,12 +155,14 @@ export default function Dashboard() {
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
+              transition: "transform 0.1s ease",
             }}
           >
             + Enroll Student
           </button>
           <button
-            onClick={() => navigate("/admin/fees")}
+            type="button"
+            onClick={handleOpenFeeCollect}
             style={{
               backgroundColor: "rgba(255, 255, 255, 0.15)",
               color: "#ffffff",
@@ -162,6 +177,7 @@ export default function Dashboard() {
               justifyContent: "center",
               gap: "6px",
               backdropFilter: "blur(4px)",
+              transition: "transform 0.1s ease",
             }}
           >
             💳 Collect Fee
@@ -179,12 +195,14 @@ export default function Dashboard() {
       >
         {/* Card 1: Enrolled Students */}
         <div
+          onClick={handleOpenEnrollStudent}
           style={{
             backgroundColor: "#ffffff",
             padding: "22px",
             borderRadius: "16px",
             border: "1px solid #e2e8f0",
             boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+            cursor: "pointer",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -203,12 +221,14 @@ export default function Dashboard() {
 
         {/* Card 2: Monthly Revenue */}
         <div
+          onClick={handleOpenFeeCollect}
           style={{
             backgroundColor: "#ffffff",
             padding: "22px",
             borderRadius: "16px",
             border: "1px solid #e2e8f0",
             boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+            cursor: "pointer",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -221,18 +241,20 @@ export default function Dashboard() {
             {loading ? "..." : `₹${monthlyRevenue.toLocaleString("en-IN")}`}
           </div>
           <div style={{ fontSize: "12px", color: "#047857", fontWeight: "600", marginTop: "8px", display: "flex", alignItems: "center", gap: "4px" }}>
-            <span>• Total fees collected</span>
+            <span>Total fees collected</span>
           </div>
         </div>
 
         {/* Card 3: Pending Dues */}
         <div
+          onClick={handleOpenFeeCollect}
           style={{
             backgroundColor: "#ffffff",
             padding: "22px",
             borderRadius: "16px",
             border: "1px solid #e2e8f0",
             boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+            cursor: "pointer",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -251,12 +273,14 @@ export default function Dashboard() {
 
         {/* Card 4: Study Material */}
         <div
+          onClick={() => navigate("/admin/notes")}
           style={{
             backgroundColor: "#ffffff",
             padding: "22px",
             borderRadius: "16px",
             border: "1px solid #e2e8f0",
             boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+            cursor: "pointer",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -302,7 +326,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <div style={{ fontSize: "13px", fontWeight: "600", color: "#0f172a" }}>{st.name}</div>
-                      <div style={{ fontSize: "11px", color: "#64748b" }}>{st.studentClass} • {st.mobile}</div>
+                      <div style={{ fontSize: "11px", color: "#64748b" }}>{st.studentClass} • {st.mobile || st.phone}</div>
                     </div>
                   </div>
                   <span
