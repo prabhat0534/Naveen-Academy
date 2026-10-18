@@ -10,6 +10,8 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [loading, setLoading] = useState(true);
+  const [autoOpenStudentModal, setAutoOpenStudentModal] = useState(false);
+  const [autoOpenFeeModal, setAutoOpenFeeModal] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("director_token");
@@ -32,6 +34,16 @@ export default function App() {
     window.location.pathname = "/";
   };
 
+  const handleOpenEnrollFromDashboard = () => {
+    setAutoOpenStudentModal(true);
+    setActiveTab("Students");
+  };
+
+  const handleOpenFeeFromDashboard = () => {
+    setAutoOpenFeeModal(true);
+    setActiveTab("Fees Management");
+  };
+
   if (loading) {
     return (
       <div
@@ -51,7 +63,6 @@ export default function App() {
     );
   }
 
-  // Agar user logged in nahi hai toh seedha Login Page load hoga
   if (!currentUser) {
     return (
       <Login
@@ -259,9 +270,25 @@ export default function App() {
           boxSizing: "border-box",
         }}
       >
-        {activeTab === "Dashboard" && <Dashboard />}
-        {activeTab === "Students" && <Students />}
-        {activeTab === "Fees Management" && <Fees />}
+        {activeTab === "Dashboard" && (
+          <Dashboard
+            onOpenEnroll={handleOpenEnrollFromDashboard}
+            onOpenFee={handleOpenFeeFromDashboard}
+            setActiveTab={setActiveTab}
+          />
+        )}
+        {activeTab === "Students" && (
+          <Students
+            autoOpenEnrollModal={autoOpenStudentModal}
+            clearAutoOpen={() => setAutoOpenStudentModal(false)}
+          />
+        )}
+        {activeTab === "Fees Management" && (
+          <Fees
+            autoOpenFeeModal={autoOpenFeeModal}
+            clearAutoOpen={() => setAutoOpenFeeModal(false)}
+          />
+        )}
         {activeTab === "Notes & Material" && <Notes />}
         {activeTab === "Notices" && <Notices />}
       </main>

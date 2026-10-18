@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { fetchStudentsAPI } from "../../services/api";
 
-export default function Dashboard() {
-  const navigate = useNavigate();
-
+export default function Dashboard({ onOpenEnroll, onOpenFee, setActiveTab }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -67,18 +64,6 @@ export default function Dashboard() {
     }
   });
 
-  // Action handlers
-  const handleOpenEnrollStudent = () => {
-    navigate("/admin/students", { state: { openEnrollModal: true } });
-    // Also dispatch custom event if App uses tab switching without unmounting
-    window.dispatchEvent(new CustomEvent("open-enroll-modal"));
-  };
-
-  const handleOpenFeeCollect = () => {
-    navigate("/admin/fees", { state: { openFeeModal: true } });
-    window.dispatchEvent(new CustomEvent("open-fee-modal"));
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px", fontFamily: "'Inter', system-ui, sans-serif" }}>
       
@@ -140,7 +125,7 @@ export default function Dashboard() {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "160px" }}>
           <button
             type="button"
-            onClick={handleOpenEnrollStudent}
+            onClick={onOpenEnroll}
             style={{
               backgroundColor: "#ffffff",
               color: "#2563eb",
@@ -155,14 +140,13 @@ export default function Dashboard() {
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
-              transition: "transform 0.1s ease",
             }}
           >
             + Enroll Student
           </button>
           <button
             type="button"
-            onClick={handleOpenFeeCollect}
+            onClick={onOpenFee}
             style={{
               backgroundColor: "rgba(255, 255, 255, 0.15)",
               color: "#ffffff",
@@ -177,7 +161,6 @@ export default function Dashboard() {
               justifyContent: "center",
               gap: "6px",
               backdropFilter: "blur(4px)",
-              transition: "transform 0.1s ease",
             }}
           >
             💳 Collect Fee
@@ -195,7 +178,7 @@ export default function Dashboard() {
       >
         {/* Card 1: Enrolled Students */}
         <div
-          onClick={handleOpenEnrollStudent}
+          onClick={onOpenEnroll}
           style={{
             backgroundColor: "#ffffff",
             padding: "22px",
@@ -221,7 +204,7 @@ export default function Dashboard() {
 
         {/* Card 2: Monthly Revenue */}
         <div
-          onClick={handleOpenFeeCollect}
+          onClick={onOpenFee}
           style={{
             backgroundColor: "#ffffff",
             padding: "22px",
@@ -247,7 +230,7 @@ export default function Dashboard() {
 
         {/* Card 3: Pending Dues */}
         <div
-          onClick={handleOpenFeeCollect}
+          onClick={onOpenFee}
           style={{
             backgroundColor: "#ffffff",
             padding: "22px",
@@ -273,7 +256,7 @@ export default function Dashboard() {
 
         {/* Card 4: Study Material */}
         <div
-          onClick={() => navigate("/admin/notes")}
+          onClick={() => setActiveTab && setActiveTab("Notes & Material")}
           style={{
             backgroundColor: "#ffffff",
             padding: "22px",
@@ -309,7 +292,7 @@ export default function Dashboard() {
               <p style={{ fontSize: "12px", color: "#64748b", margin: "2px 0 0" }}>Active batch admissions</p>
             </div>
             <button
-              onClick={() => navigate("/admin/students")}
+              onClick={() => setActiveTab && setActiveTab("Students")}
               style={{ background: "none", border: "none", color: "#2563eb", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
             >
               View All Students →
@@ -359,7 +342,7 @@ export default function Dashboard() {
               <p style={{ fontSize: "12px", color: "#64748b", margin: "2px 0 0" }}>Real-time receipt stream</p>
             </div>
             <button
-              onClick={() => navigate("/admin/fees")}
+              onClick={() => setActiveTab && setActiveTab("Fees Management")}
               style={{ background: "none", border: "none", color: "#2563eb", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
             >
               Full Ledger →
