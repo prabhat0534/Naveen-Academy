@@ -7,6 +7,7 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [classFilter, setClassFilter] = useState("All"); // Class Filter state
 
   // Collect Fee Modal State
   const [collectModalOpen, setCollectModalOpen] = useState(false);
@@ -70,7 +71,6 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
         });
         setStudents(mapped);
 
-        // Keep active ledger student in sync if modal is open
         if (selectedLedgerStudent) {
           const refreshed = mapped.find(
             (s) => s.id === selectedLedgerStudent.id || s.mongoId === selectedLedgerStudent.mongoId
@@ -89,7 +89,6 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
     loadData();
   }, []);
 
-  // Handle auto open from dashboard
   useEffect(() => {
     if (autoOpenFeeModal && students.length > 0) {
       const firstPending = students.find((s) => s.feeStatus !== "Paid") || students[0];
@@ -151,7 +150,6 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
     }
   };
 
-  // Helper: check month record from student's feeHistory
   const getMonthRecord = (student, monthName) => {
     if (!student || !student.feeHistory) return null;
     return student.feeHistory.find((f) => {
@@ -161,6 +159,11 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
     });
   };
 
+  // Dynamic unique classes list
+  const availableClasses = Array.from(new Set(students.map((s) => s.class).filter(Boolean))).sort((a, b) => {
+    return String(a).localeCompare(String(b), undefined, { numeric: true });
+  });
+
   const filteredStudents = students.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -168,14 +171,17 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
       s.mobile?.includes(search);
     const matchesStatus =
       statusFilter === "All" || s.feeStatus === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesClass =
+      classFilter === "All" || String(s.class).toLowerCase() === String(classFilter).toLowerCase();
+
+    return matchesSearch && matchesStatus && matchesClass;
   });
 
-  const totalCollected = students
+  const totalCollected = filteredStudents
     .filter((s) => s.feeStatus === "Paid")
     .reduce((sum, s) => sum + (Number(s.monthlyFee) || 0), 0);
 
-  const totalPending = students
+  const totalPending = filteredStudents
     .filter((s) => s.feeStatus !== "Paid")
     .reduce((sum, s) => sum + (Number(s.monthlyFee) || 0), 0);
 
@@ -187,7 +193,7 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
         <div>
           <h2 style={{ fontSize: "22px", fontWeight: "700", color: "#0f172a", margin: 0 }}>Fees Management</h2>
           <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0 0 0" }}>
-            Track monthly collections, view 12-month student fee ledgers & record receipts
+            Track monthly collections, filter by class & status, view 12-month student fee ledgers
           </p>
         </div>
       </div>
@@ -195,7 +201,7 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
         <div style={{ backgroundColor: "#ffffff", padding: "18px", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
-          <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Total Collected</span>
+          <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Collected ({classFilter === "All" ? "All Classes" : `Class ${classFilter}`})</span>
           <div style={{ fontSize: "24px", fontWeight: "800", color: "#047857", marginTop: "6px" }}>
             ₹{totalCollected.toLocaleString("en-IN")}
           </div>
@@ -208,22 +214,22 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
             ₹{totalPending.toLocaleString("en-IN")}
           </div>
           <span style={{ fontSize: "12px", color: "#d97706", fontWeight: "600" }}>
-            ⚠️ {students.filter((s) => s.feeStatus !== "Paid").length} Students pending
+            ⚠️ {filteredStudents.filter((s) => s.feeStatus !== "Paid").length} Students pending
           </span>
         </div>
 
         <div style={{ backgroundColor: "#ffffff", padding: "18px", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
-          <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Total Active Students</span>
+          <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Filtered Students</span>
           <div style={{ fontSize: "24px", fontWeight: "800", color: "#0f172a", marginTop: "6px" }}>
-            {students.length}
+            {filteredStudents.length}
           </div>
-          <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "600" }}>🎓 Naveen Academy Roster</span>
+          <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "600" }}>🎓 Out of {students.length} Total</span>
         </div>
       </div>
 
-      {/* Filter and Search */}
+      {/* Filter and Search Bar */}
       <div style={{ backgroundColor: "#ffffff", padding: "16px", borderRadius: "14px", border: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", gap: "12px", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ flex: 1, minWidth: "240px" }}>
+        <div style={{ flex: 1, minWidth: "220px" }}>
           <input
             type="text"
             placeholder="Search student name, roll number, or phone..."
@@ -233,17 +239,35 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
           />
         </div>
 
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b" }}>Status Filter:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: "9px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none", backgroundColor: "#fff", cursor: "pointer" }}
-          >
-            <option value="All">All Status</option>
-            <option value="Paid">Paid</option>
-            <option value="Pending">Pending</option>
-          </select>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          {/* Class Filter Dropdown */}
+          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b" }}>Class:</span>
+            <select
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
+              style={{ padding: "9px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none", backgroundColor: "#fff", cursor: "pointer" }}
+            >
+              <option value="All">All Classes</option>
+              {availableClasses.map((cls) => (
+                <option key={cls} value={cls}>Class {cls}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter Dropdown */}
+          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b" }}>Status:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ padding: "9px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none", backgroundColor: "#fff", cursor: "pointer" }}
+            >
+              <option value="All">All Status</option>
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -400,7 +424,7 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
               ) : (
                 <tr>
                   <td colSpan="7" style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
-                    No fee records found.
+                    No students match the selected class and status filters.
                   </td>
                 </tr>
               )}
