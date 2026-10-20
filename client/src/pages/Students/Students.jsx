@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { fetchStudentsAPI, enrollStudentAPI, payFeeAPI } from "../../services/api";
+import {
+  fetchStudentsAPI,
+  enrollStudentAPI,
+  payFeeAPI,
+  updateStudentAPI,
+  deleteStudentAPI,
+} from "../../services/api";
 
 export default function Students() {
   const [search, setSearch] = useState("");
@@ -8,6 +14,20 @@ export default function Students() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit Student Modal States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    class: "Class 10",
+    rollNo: "",
+    fatherName: "",
+    mobile: "",
+    monthlyFee: 1500,
+    address: "",
+    batchTiming: "04:30 PM - 06:00 PM",
+  });
 
   const todayDate = new Date().toISOString().split("T")[0];
 
@@ -58,7 +78,7 @@ export default function Students() {
     loadDatabaseStudents();
   }, []);
 
-  // Discrete Time Picker State
+  // Discrete Time Picker State for Enrollment
   const [newStudent, setNewStudent] = useState({
     name: "",
     class: "Class 10",
@@ -126,6 +146,86 @@ export default function Students() {
     } catch (err) {
       console.error("Save error:", err);
       alert("❌ Server connection error while saving student.");
+    }
+  };
+
+  // Open Edit Modal
+  const handleOpenEditModal = (st) => {
+    setEditingStudent(st);
+    setEditFormData({
+      name: st.name || "",
+      class: st.class || "Class 10",
+      rollNo: st.rollNo === "-" ? "" : st.rollNo,
+      fatherName: st.fatherName === "N/A" ? "" : st.fatherName,
+      mobile: st.mobile || "",
+      monthlyFee: st.monthlyFee || 1500,
+      address: st.address || "",
+      batchTiming: st.batchTiming || "04:30 PM - 06:00 PM",
+    });
+    setShowEditModal(true);
+  };
+
+  // Submit Edit Form
+  const handleUpdateStudent = async (e) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+
+    const payload = {
+      name: editFormData.name,
+      studentClass: editFormData.class,
+      rollNo: editFormData.rollNo,
+      fatherName: editFormData.fatherName || "N/A",
+      mobile: editFormData.mobile,
+      monthlyFee: Number(editFormData.monthlyFee) || 1500,
+      address: editFormData.address,
+      batchTiming: editFormData.batchTiming,
+    };
+
+    try {
+      const targetId = editingStudent.mongoId || editingStudent.id;
+      const res = await updateStudentAPI(targetId, payload);
+      if (res && res.success) {
+        alert(`✅ Profile updated successfully for ${editFormData.name}!`);
+        setShowEditModal(false);
+        if (selectedStudent && selectedStudent.id === editingStudent.id) {
+          setSelectedStudent((prev) => ({
+            ...prev,
+            ...payload,
+            class: payload.studentClass,
+          }));
+        }
+        await loadDatabaseStudents();
+      } else {
+        alert("❌ Failed to update student: " + (res?.message || "Error occurred"));
+      }
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("❌ Server connection error while updating student.");
+    }
+  };
+
+  // Delete Student
+  const handleDeleteStudent = async (st) => {
+    const confirmDelete = window.confirm(
+      `⚠️ Are you sure you want to completely remove ${st.name} (${st.class}) from the database? This cannot be undone.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const targetId = st.mongoId || st.id;
+      const res = await deleteStudentAPI(targetId);
+      if (res && res.success) {
+        alert(`🗑️ Student ${st.name} deleted successfully.`);
+        if (selectedStudent && selectedStudent.id === st.id) {
+          setSelectedStudent(null);
+        }
+        await loadDatabaseStudents();
+      } else {
+        alert("❌ Delete failed: " + (res?.message || "Error occurred"));
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("❌ Server connection error while deleting student.");
     }
   };
 
@@ -297,7 +397,7 @@ export default function Students() {
                       </span>
                     </td>
                     <td style={{ padding: "12px 18px", textAlign: "right" }}>
-                      <div style={{ display: "inline-flex", gap: "8px" }}>
+                      <div style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
                         {st.feeStatus !== "Paid" && (
                           <button
                             onClick={() => handleMarkFeePaid(st)}
@@ -305,9 +405,9 @@ export default function Students() {
                               backgroundColor: "#ecfdf5",
                               color: "#047857",
                               border: "1px solid #a7f3d0",
-                              padding: "6px 10px",
-                              borderRadius: "8px",
-                              fontSize: "12px",
+                              padding: "5px 8px",
+                              borderRadius: "7px",
+                              fontSize: "11px",
                               fontWeight: "600",
                               cursor: "pointer",
                             }}
@@ -321,14 +421,46 @@ export default function Students() {
                             backgroundColor: "#eff6ff",
                             color: "#1d4ed8",
                             border: "1px solid #bfdbfe",
-                            padding: "6px 12px",
-                            borderRadius: "8px",
-                            fontSize: "12px",
+                            padding: "5px 10px",
+                            borderRadius: "7px",
+                            fontSize: "11px",
                             fontWeight: "600",
                             cursor: "pointer",
                           }}
                         >
-                          View Profile
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditModal(st)}
+                          title="Edit Student"
+                          style={{
+                            backgroundColor: "#f8fafc",
+                            color: "#475569",
+                            border: "1px solid #cbd5e1",
+                            padding: "5px 9px",
+                            borderRadius: "7px",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteStudent(st)}
+                          title="Delete Student"
+                          style={{
+                            backgroundColor: "#fff1f2",
+                            color: "#e11d48",
+                            border: "1px solid #fecdd3",
+                            padding: "5px 8px",
+                            borderRadius: "7px",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                          }}
+                        >
+                          🗑️
                         </button>
                       </div>
                     </td>
@@ -389,7 +521,7 @@ export default function Students() {
                       {selectedStudent.class}
                     </span>
                     <span style={{ fontSize: "12px", color: "#64748b" }}>ID: {selectedStudent.id}</span>
-                    <span style={{ fontSize: "12px", color: "#64748b" }}>• Roll: {selectedStudent.rollNo}</span>
+                    <span style={{ fontSize: "12px", color: "#64748b" }}>Roll: {selectedStudent.rollNo}</span>
                   </div>
                 </div>
               </div>
@@ -517,43 +649,250 @@ export default function Students() {
             </div>
 
             {/* Bottom Actions */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: "16px", gap: "10px" }}>
-              <a
-                href={`https://wa.me/91${selectedStudent.mobile}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  textDecoration: "none",
-                  backgroundColor: "#22c55e",
-                  color: "#ffffff",
-                  padding: "9px 16px",
-                  borderRadius: "10px",
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px"
-                }}
-              >
-                💬 WhatsApp Parent
-              </a>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: "16px", gap: "10px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <a
+                  href={`https://wa.me/91${selectedStudent.mobile}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    textDecoration: "none",
+                    backgroundColor: "#22c55e",
+                    color: "#ffffff",
+                    padding: "9px 14px",
+                    borderRadius: "10px",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                >
+                  💬 WhatsApp
+                </a>
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditModal(selectedStudent)}
+                  style={{
+                    backgroundColor: "#f1f5f9",
+                    color: "#334155",
+                    border: "1px solid #cbd5e1",
+                    padding: "9px 14px",
+                    borderRadius: "10px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✏️ Edit Profile
+                </button>
+              </div>
 
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteStudent(selectedStudent)}
+                  style={{
+                    backgroundColor: "#fff1f2",
+                    color: "#e11d48",
+                    border: "1px solid #fecdd3",
+                    padding: "9px 14px",
+                    borderRadius: "10px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  🗑️ Delete
+                </button>
+                <button
+                  onClick={() => setSelectedStudent(null)}
+                  style={{
+                    padding: "9px 16px",
+                    borderRadius: "10px",
+                    border: "1px solid #cbd5e1",
+                    backgroundColor: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: "#475569",
+                    cursor: "pointer"
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT STUDENT MODAL */}
+      {showEditModal && editingStudent && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px",
+              maxWidth: "520px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#0f172a", margin: 0 }}>
+                  ✏️ Edit Student Details
+                </h3>
+                <span style={{ fontSize: "12px", color: "#64748b" }}>ID: {editingStudent.id}</span>
+              </div>
               <button
-                onClick={() => setSelectedStudent(null)}
-                style={{
-                  padding: "9px 18px",
-                  borderRadius: "10px",
-                  border: "1px solid #cbd5e1",
-                  backgroundColor: "#f8fafc",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  color: "#475569",
-                  cursor: "pointer"
-                }}
+                onClick={() => setShowEditModal(false)}
+                style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#64748b" }}
               >
-                Close Profile
+                ✕
               </button>
             </div>
+
+            <form onSubmit={handleUpdateStudent} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "4px" }}>
+                  Student Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "4px" }}>
+                    Class *
+                  </label>
+                  <select
+                    value={editFormData.class}
+                    onChange={(e) => setEditFormData({ ...editFormData, class: e.target.value })}
+                    style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box", backgroundColor: "#fff" }}
+                  >
+                    {["Class 10", "Class 9", "Class 8", "Class 7", "Class 6", "Class 5", "Class 4", "Class 3"].map((cls) => (
+                      <option key={cls} value={cls}>{cls}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "4px" }}>
+                    Roll Number
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.rollNo}
+                    onChange={(e) => setEditFormData({ ...editFormData, rollNo: e.target.value })}
+                    style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "4px" }}>
+                    Father / Guardian Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.fatherName}
+                    onChange={(e) => setEditFormData({ ...editFormData, fatherName: e.target.value })}
+                    style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "4px" }}>
+                    Contact Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={editFormData.mobile}
+                    onChange={(e) => setEditFormData({ ...editFormData, mobile: e.target.value })}
+                    style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "4px" }}>
+                    Monthly Fee (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={editFormData.monthlyFee}
+                    onChange={(e) => setEditFormData({ ...editFormData, monthlyFee: e.target.value })}
+                    style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "4px" }}>
+                    Batch Timing
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.batchTiming}
+                    onChange={(e) => setEditFormData({ ...editFormData, batchTiming: e.target.value })}
+                    style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569", display: "block", marginBottom: "4px" }}>
+                  Residential Address
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.address}
+                  onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "none", fontSize: "13px", cursor: "pointer", color: "#475569" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: "8px 18px", borderRadius: "8px", border: "none", backgroundColor: "#2563eb", color: "#fff", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

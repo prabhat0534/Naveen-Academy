@@ -81,7 +81,9 @@ exports.collectStudentFee = async (req, res) => {
     const { id } = req.params;
     const { month, amount, mode, transactionRef } = req.body;
 
-    const student = await Student.findOne({ studentId: id });
+    const student = await Student.findOne({
+      $or: [{ studentId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+    });
     if (!student) {
       return res.status(404).json({ success: false, message: "Student not found" });
     }
@@ -114,6 +116,55 @@ exports.collectStudentFee = async (req, res) => {
     await student.save();
 
     res.status(200).json({ success: true, data: student });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 4. Update Student Details
+exports.updateStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = { ...req.body };
+
+    // studentId overwrite hone se protect karein
+    delete updateData.studentId;
+
+    const query = {
+      $or: [{ studentId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+    };
+
+    const updated = await Student.findOneAndUpdate(
+      query,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 5. Delete Student Record
+exports.deleteStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = {
+      $or: [{ studentId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+    };
+
+    const deleted = await Student.findOneAndDelete(query);
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Student record deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
