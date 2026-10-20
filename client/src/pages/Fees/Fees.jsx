@@ -39,18 +39,18 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
 
   // Standard Academic Session Months (April to March)
   const sessionMonths = [
-    "April 2026",
-    "May 2026",
-    "June 2026",
-    "July 2026",
-    "August 2026",
-    "September 2026",
-    "October 2026",
-    "November 2026",
-    "December 2026",
-    "January 2027",
-    "February 2027",
-    "March 2027",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const loadData = async () => {
