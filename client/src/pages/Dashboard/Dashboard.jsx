@@ -82,22 +82,28 @@ export default function Dashboard({ onOpenEnroll, onOpenFee, setActiveTab }) {
         </div>
       </div>
 
-      {/* Main Banner */}
+      {/* Main Branded Banner */}
       <div
         style={{
-          background: "linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)",
           borderRadius: "20px",
-          padding: "32px",
+          padding: "36px 32px",
           color: "#ffffff",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: "20px",
-          boxShadow: "0 10px 25px -5px rgba(37, 99, 235, 0.3)",
+          position: "relative",
+          overflow: "hidden",
+          backgroundImage: `linear-gradient(90deg, rgba(10, 25, 60, 0.94) 0%, rgba(10, 25, 60, 0.78) 48%, rgba(10, 25, 60, 0.12) 100%), url('/academy-banner.png')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center right",
+          backgroundRepeat: "no-repeat",
+          boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.35)",
+          minHeight: "185px",
         }}
       >
-        <div style={{ maxWidth: "620px" }}>
+        <div style={{ maxWidth: "580px", zIndex: 2 }}>
           <div
             style={{
               display: "inline-flex",
@@ -109,33 +115,34 @@ export default function Dashboard({ onOpenEnroll, onOpenFee, setActiveTab }) {
               fontSize: "12px",
               fontWeight: "600",
               marginBottom: "12px",
-              backdropFilter: "blur(4px)",
+              backdropFilter: "blur(6px)",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
             }}
           >
             <span>✨ Session 2026–2027 Active</span>
           </div>
-          <h2 style={{ fontSize: "28px", fontWeight: "800", margin: "0 0 8px 0" }}>
+          <h2 style={{ fontSize: "28px", fontWeight: "800", margin: "0 0 8px 0", textShadow: "0 2px 4px rgba(0,0,0,0.35)" }}>
             Welcome back, Director! 👋
           </h2>
-          <p style={{ margin: 0, fontSize: "14px", color: "#e0e7ff", lineHeight: "1.5" }}>
+          <p style={{ margin: 0, fontSize: "14px", color: "#e0e7ff", lineHeight: "1.5", textShadow: "0 1px 3px rgba(0,0,0,0.45)" }}>
             Naveen Academy Management Portal — Class 3 to 10 batches are running. Here is your operational summary today.
           </p>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "160px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "160px", zIndex: 2 }}>
           <button
             type="button"
             onClick={onOpenEnroll}
             style={{
               backgroundColor: "#ffffff",
-              color: "#2563eb",
+              color: "#1e3a8a",
               border: "none",
               padding: "11px 18px",
               borderRadius: "12px",
               fontSize: "13px",
               fontWeight: "700",
               cursor: "pointer",
-              boxShadow: "0 4px 6px rgba(0,0,0,0.08)",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.18)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -148,9 +155,9 @@ export default function Dashboard({ onOpenEnroll, onOpenFee, setActiveTab }) {
             type="button"
             onClick={onOpenFee}
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.15)",
+              backgroundColor: "rgba(255, 255, 255, 0.2)",
               color: "#ffffff",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
+              border: "1px solid rgba(255, 255, 255, 0.45)",
               padding: "11px 18px",
               borderRadius: "12px",
               fontSize: "13px",
@@ -160,7 +167,7 @@ export default function Dashboard({ onOpenEnroll, onOpenFee, setActiveTab }) {
               alignItems: "center",
               justifyContent: "center",
               gap: "6px",
-              backdropFilter: "blur(4px)",
+              backdropFilter: "blur(8px)",
             }}
           >
             💳 Collect Fee
