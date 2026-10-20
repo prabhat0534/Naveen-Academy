@@ -7,7 +7,7 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [classFilter, setClassFilter] = useState("All"); // Class Filter state
+  const [classFilter, setClassFilter] = useState("All");
 
   // Collect Fee Modal State
   const [collectModalOpen, setCollectModalOpen] = useState(false);
@@ -24,6 +24,18 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
 
   // Student Month-wise Ledger Modal State
   const [selectedLedgerStudent, setSelectedLedgerStudent] = useState(null);
+
+  // Standard Academic Classes (Class 3 to 10)
+  const academicClasses = [
+    "Class 3",
+    "Class 4",
+    "Class 5",
+    "Class 6",
+    "Class 7",
+    "Class 8",
+    "Class 9",
+    "Class 10",
+  ];
 
   // Standard Academic Session Months (April to March)
   const sessionMonths = [
@@ -159,10 +171,13 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
     });
   };
 
-  // Dynamic unique classes list
-  const availableClasses = Array.from(new Set(students.map((s) => s.class).filter(Boolean))).sort((a, b) => {
-    return String(a).localeCompare(String(b), undefined, { numeric: true });
-  });
+  // Helper function to normalize class matching (handles "10" and "Class 10")
+  const isClassMatching = (studentClass, selectedClass) => {
+    if (selectedClass === "All") return true;
+    const s1 = String(studentClass || "").toLowerCase().replace("class", "").trim();
+    const s2 = String(selectedClass || "").toLowerCase().replace("class", "").trim();
+    return s1 === s2;
+  };
 
   const filteredStudents = students.filter((s) => {
     const matchesSearch =
@@ -171,8 +186,7 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
       s.mobile?.includes(search);
     const matchesStatus =
       statusFilter === "All" || s.feeStatus === statusFilter;
-    const matchesClass =
-      classFilter === "All" || String(s.class).toLowerCase() === String(classFilter).toLowerCase();
+    const matchesClass = isClassMatching(s.class, classFilter);
 
     return matchesSearch && matchesStatus && matchesClass;
   });
@@ -201,7 +215,9 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
         <div style={{ backgroundColor: "#ffffff", padding: "18px", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
-          <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Collected ({classFilter === "All" ? "All Classes" : `Class ${classFilter}`})</span>
+          <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>
+            Collected ({classFilter === "All" ? "All Classes" : classFilter})
+          </span>
           <div style={{ fontSize: "24px", fontWeight: "800", color: "#047857", marginTop: "6px" }}>
             ₹{totalCollected.toLocaleString("en-IN")}
           </div>
@@ -240,7 +256,7 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
         </div>
 
         <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-          {/* Class Filter Dropdown */}
+          {/* Fixed Class 3 to 10 Filter Dropdown */}
           <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
             <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b" }}>Class:</span>
             <select
@@ -248,9 +264,9 @@ export default function Fees({ autoOpenFeeModal, clearAutoOpen }) {
               onChange={(e) => setClassFilter(e.target.value)}
               style={{ padding: "9px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none", backgroundColor: "#fff", cursor: "pointer" }}
             >
-              <option value="All">All Classes</option>
-              {availableClasses.map((cls) => (
-                <option key={cls} value={cls}>Class {cls}</option>
+              <option value="All">All Classes (3 to 10)</option>
+              {academicClasses.map((cls) => (
+                <option key={cls} value={cls}>{cls}</option>
               ))}
             </select>
           </div>
