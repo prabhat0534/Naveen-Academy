@@ -56,7 +56,35 @@ export const payFeeAPI = async (studentId, feeDetails) => {
   }
 };
 
-// 4. Dashboard Stats
+// 4. Update Student Details
+export const updateStudentAPI = async (studentId, updatedData) => {
+  try {
+    const res = await fetch(`${BASE_URL}/students/${studentId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedData),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Update student error:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+// 5. Delete Student Record
+export const deleteStudentAPI = async (studentId) => {
+  try {
+    const res = await fetch(`${BASE_URL}/students/${studentId}`, {
+      method: "DELETE",
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Delete student error:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+// 6. Dashboard Stats
 export const fetchDashboardStatsAPI = async () => {
   try {
     const res = await fetch(`${BASE_URL}/students`);
@@ -109,7 +137,7 @@ export const fetchDashboardStatsAPI = async () => {
   }
 };
 
-// 5. Notices APIs
+// 7. Notices APIs
 export const fetchNoticesAPI = async () => {
   try {
     const res = await fetch(`${BASE_URL}/notices`);
@@ -146,7 +174,7 @@ export const deleteNoticeAPI = async (id) => {
   }
 };
 
-// 6. Notes & Study Material APIs (Connected to Render Backend)
+// 8. Notes & Study Material APIs
 export const fetchNotesAPI = async (studentClass = "") => {
   try {
     const url = studentClass && studentClass !== "All"
