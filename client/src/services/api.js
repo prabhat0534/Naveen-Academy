@@ -1,4 +1,5 @@
 const BASE_URL = "https://naveen-academy-0c7k.onrender.com/api";
+
 // 0. Director Login
 export const loginAPI = async (credentials) => {
   try {
@@ -141,6 +142,46 @@ export const deleteNoticeAPI = async (id) => {
     return await res.json();
   } catch (error) {
     console.error("Delete notice error:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+// 6. Notes & Study Material APIs (Connected to Render Backend)
+export const fetchNotesAPI = async (studentClass = "") => {
+  try {
+    const url = studentClass && studentClass !== "All"
+      ? `${BASE_URL}/notes?studentClass=${encodeURIComponent(studentClass)}`
+      : `${BASE_URL}/notes`;
+    const res = await fetch(url);
+    return await res.json();
+  } catch (error) {
+    console.error("Fetch notes error:", error);
+    return { success: false, data: [] };
+  }
+};
+
+export const createNoteAPI = async (noteData) => {
+  try {
+    const res = await fetch(`${BASE_URL}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(noteData),
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Create note error:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+export const deleteNoteAPI = async (id) => {
+  try {
+    const res = await fetch(`${BASE_URL}/notes/${id}`, {
+      method: "DELETE",
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Delete note error:", error);
     return { success: false, message: error.message };
   }
 };

@@ -32,6 +32,7 @@ const noticeRoutes = require("./routes/noticeRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/notices", noticeRoutes);
+app.use("/api/notes", require("./routes/noteRoutes"));
 
 app.get("/", (req, res) => {
   res.send("Naveen Academy API is Live on Cloud!");
